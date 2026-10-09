@@ -1,12 +1,13 @@
 import 'dart:math';
 
 import 'package:flame/game.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'confetti_game.dart';
+import 'home_screen.dart';
 import 'levels.dart';
-import 'main.dart' show AppColors;
+import 'app_bar.dart';
+import 'theme.dart';
 import 'progress_store.dart';
 
 /// Main transaction page: the word-unscramble game.
@@ -14,11 +15,18 @@ class GameScreen extends StatefulWidget {
   final int startLevel;
   const GameScreen({super.key, this.startLevel = 0});
 
+  static int? get activeGameLevel => _GameScreenState.activeGameLevel;
+
   @override
   State<GameScreen> createState() => _GameScreenState();
 }
 
 class _GameScreenState extends State<GameScreen> {
+  static final List<_GameScreenState> _activeGames = [];
+
+  static int? get activeGameLevel =>
+      _activeGames.isEmpty ? null : _activeGames.last._levelIndex;
+
   static const int _basePoints = 100;
   static const int _streakBonus = 10;
   static const int _hintCost = 20;
@@ -40,15 +48,23 @@ class _GameScreenState extends State<GameScreen> {
   int _streak = 0;
   int _bestStreak = 0;
   int _hintsUsedInLevel = 0;
+  bool _levelCompleted = false;
 
   LevelData get _level => levels[_levelIndex];
-  String get _answer => _level.words[_wordIndex].word;
+  String get _answer => _level.words[_wordIndex];
 
   @override
   void initState() {
     super.initState();
+    _activeGames.add(this);
     _levelIndex = widget.startLevel;
     _loadLevel();
+  }
+
+  @override
+  void dispose() {
+    _activeGames.remove(this);
+    super.dispose();
   }
 
   // ---------- Setup ----------
@@ -133,6 +149,8 @@ class _GameScreenState extends State<GameScreen> {
         if (!finished) {
           _wordIndex++;
           _initWord();
+        } else {
+          _levelCompleted = true;
         }
       });
 
@@ -158,8 +176,10 @@ class _GameScreenState extends State<GameScreen> {
     final answer = _answer;
 
     // First box that is empty or wrong.
-    final target = List.generate(answer.length, (i) => i)
-        .firstWhere((i) => _boxes[i] != answer[i], orElse: () => -1);
+    final target = List.generate(
+      answer.length,
+      (i) => i,
+    ).firstWhere((i) => _boxes[i] != answer[i], orElse: () => -1);
 
     if (target == -1) {
       _showSnackBar('No hint needed.');
@@ -216,12 +236,17 @@ class _GameScreenState extends State<GameScreen> {
 
   Future<void> _completeLevel() async {
     final stars = _stars;
-    await ProgressStore.recordLevel(
-      levelIndex: _levelIndex,
-      stars: stars,
-      score: _score,
-      bestStreak: _bestStreak,
-    );
+    String? saveError;
+    try {
+      await ProgressStore.recordLevel(
+        levelIndex: _levelIndex,
+        stars: stars,
+        score: _score,
+        bestStreak: _bestStreak,
+      ).timeout(const Duration(seconds: 5));
+    } catch (_) {
+      saveError = 'Progress could not be saved right now. Check your connection and try again.';
+    }
     if (!mounted) return;
 
     final isLast = _levelIndex + 1 >= levels.length;
@@ -249,7 +274,9 @@ class _GameScreenState extends State<GameScreen> {
                       Text(
                         isLast ? 'Game Complete!' : 'Level Complete!',
                         style: const TextStyle(
-                            fontSize: 22, fontWeight: FontWeight.bold),
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Row(
@@ -267,6 +294,15 @@ class _GameScreenState extends State<GameScreen> {
                       Text('Best streak: $_bestStreak'),
                       Text('Hints used: $_hintsUsedInLevel'),
                       Text('Points spent on hints: $pointsSpent'),
+                      if (saveError != null) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          saveError,
+                          style: TextStyle(
+                            color: Theme.of(ctx).colorScheme.error,
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
@@ -274,24 +310,15 @@ class _GameScreenState extends State<GameScreen> {
                           TextButton(
                             onPressed: () {
                               Navigator.of(ctx).pop(); // close dialog
-                              Navigator.of(context).pop(); // back to dashboard
+                              _startNextLevel(isLast: isLast);
+                              _openDashboard();
                             },
                             child: const Text('Dashboard'),
                           ),
                           TextButton(
                             onPressed: () {
                               Navigator.of(ctx).pop();
-                              setState(() {
-                                if (isLast) {
-                                  _levelIndex = 0; // Play Again
-                                  _score = 0;
-                                  _streak = 0;
-                                  _bestStreak = 0;
-                                } else {
-                                  _levelIndex++; // Continue
-                                }
-                                _loadLevel();
-                              });
+                              _startNextLevel(isLast: isLast);
                             },
                             child: Text(isLast ? 'Play Again' : 'Continue'),
                           ),
@@ -308,6 +335,21 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
+  void _startNextLevel({required bool isLast}) {
+    setState(() {
+      _levelCompleted = false;
+      if (isLast) {
+        _levelIndex = 0;
+        _score = 0;
+        _streak = 0;
+        _bestStreak = 0;
+      } else {
+        _levelIndex++;
+      }
+      _loadLevel();
+    });
+  }
+
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -319,52 +361,65 @@ class _GameScreenState extends State<GameScreen> {
       );
   }
 
+  void _openDashboard() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => HomeScreen(
+          resumeLevel: _levelIndex,
+        ),
+      ),
+    );
+  }
+
   // ---------- UI ----------
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: AppColors.topBar,
-        title: Text('Level ${_levelIndex + 1}: ${_level.name}'),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Center(
-              child: Text('Score: $_score | Streak: $_streak',
-                  style: const TextStyle(fontSize: 14)),
-            ),
+    return PopScope(
+      canPop: _levelCompleted,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && !_levelCompleted) _openDashboard();
+      },
+      child: Scaffold(
+        appBar: vqAppBar(
+          context,
+          extraAction: IconButton(
+            tooltip: 'Pause and open dashboard',
+            icon: const Icon(Icons.dashboard_outlined),
+            onPressed: _openDashboard,
           ),
-        ],
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              _buildImageCard(),
-              const SizedBox(height: 12),
-              Text('Word ${_wordIndex + 1} of ${_level.words.length}'),
-              const SizedBox(height: 8),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.topBar),
-                onPressed: _useHint,
-                icon: const Icon(Icons.lightbulb_outline),
-                label: Text('Hint (-$_hintCost pts)'),
-              ),
-              const SizedBox(height: 20),
-              _buildBoxes(),
-              const SizedBox(height: 20),
-              _buildTiles(),
-              const SizedBox(height: 32),
-              _buildControls(),
-              if (kDebugMode) ...[
-                const SizedBox(height: 16),
-                Text('Debug: $_answer',
-                    style: const TextStyle(color: Colors.grey, fontSize: 12)),
+        ),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                Text(
+                  'Level ${_levelIndex + 1}: ${_level.name}   |   '
+                  'Score: $_score   |   Streak: $_streak',
+                  style: const TextStyle(fontSize: 14),
+                ),
+                const SizedBox(height: 12),
+                _buildImageCard(),
+                const SizedBox(height: 12),
+                Text('Word ${_wordIndex + 1} of ${_level.words.length}'),
+                const SizedBox(height: 8),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.topBar,
+                  ),
+                  onPressed: _useHint,
+                  icon: const Icon(Icons.lightbulb_outline),
+                  label: Text('Hint (-$_hintCost pts)'),
+                ),
+                const SizedBox(height: 20),
+                _buildBoxes(),
+                const SizedBox(height: 20),
+                _buildTiles(),
+                const SizedBox(height: 32),
+                _buildControls(),
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -372,7 +427,6 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   Widget _buildImageCard() {
-    final clue = _level.words[_wordIndex];
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 280, maxHeight: 280),
       child: AspectRatio(
@@ -382,7 +436,7 @@ class _GameScreenState extends State<GameScreen> {
           child: Container(
             color: Colors.white,
             child: Image.asset(
-              clue.image,
+              _level.image,
               fit: BoxFit.cover,
               // Placeholder until the real image files are added.
               errorBuilder: (_, _, _) => Center(
@@ -391,8 +445,10 @@ class _GameScreenState extends State<GameScreen> {
                   children: [
                     Icon(_level.icon, size: 64, color: Colors.grey),
                     const SizedBox(height: 8),
-                    const Text('IMAGE',
-                        style: TextStyle(fontSize: 20, letterSpacing: 2)),
+                    const Text(
+                      'IMAGE',
+                      style: TextStyle(fontSize: 20, letterSpacing: 2),
+                    ),
                   ],
                 ),
               ),
@@ -420,8 +476,7 @@ class _GameScreenState extends State<GameScreen> {
             ),
             child: Text(
               _boxes[i] ?? '',
-              style:
-                  const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
           ),
         );
@@ -444,12 +499,14 @@ class _GameScreenState extends State<GameScreen> {
               backgroundColor: AppColors.tile,
               foregroundColor: Colors.black,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             onPressed: _tileUsed[i] ? null : () => _onTileTap(i),
-            child: Text(_tiles[i],
-                style: const TextStyle(
-                    fontSize: 22, fontWeight: FontWeight.bold)),
+            child: Text(
+              _tiles[i],
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
           ),
         );
       }),
@@ -458,26 +515,32 @@ class _GameScreenState extends State<GameScreen> {
 
   Widget _buildControls() {
     ButtonStyle style() => ElevatedButton.styleFrom(
-          backgroundColor: AppColors.control,
-          foregroundColor: Colors.black,
-          minimumSize: const Size(90, 48),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        );
+      backgroundColor: AppColors.control,
+      foregroundColor: Colors.black,
+      minimumSize: const Size(90, 48),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+    );
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         ElevatedButton(
-            style: style(),
-            onPressed: _onBackspace,
-            child: const Icon(Icons.backspace_outlined)),
+          style: style(),
+          onPressed: _onBackspace,
+          child: const Icon(Icons.backspace_outlined),
+        ),
         const SizedBox(width: 12),
         ElevatedButton(
-            style: style(), onPressed: _onClear, child: const Text('Clear')),
+          style: style(),
+          onPressed: _onClear,
+          child: const Text('Clear'),
+        ),
         const SizedBox(width: 12),
         ElevatedButton(
-            style: style(), onPressed: _onSubmit, child: const Text('Submit')),
+          style: style(),
+          onPressed: _onSubmit,
+          child: const Text('Submit'),
+        ),
       ],
     );
   }

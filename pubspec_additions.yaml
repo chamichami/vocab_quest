@@ -1,0 +1,12 @@
+# 1) Add the packages (picks versions that work together):
+#
+#   flutter pub add flame shared_preferences firebase_core firebase_auth \
+#       cloud_firestore image_picker http audioplayers
+#
+# 2) Make sure the flutter: section of pubspec.yaml lists the assets:
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/audio/

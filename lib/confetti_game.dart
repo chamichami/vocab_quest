@@ -12,21 +12,27 @@ class ConfettiGame extends FlameGame {
   @override
   Color backgroundColor() => const Color(0x00000000);
 
-  // Spawn once the real size is known (size can be zero inside onLoad).
-  @override
-  void onGameResize(Vector2 size) {
-    super.onGameResize(size);
-    if (_spawned || size.x == 0) return;
+  void _spawnConfetti() {
+    if (_spawned || size.x <= 0 || size.y <= 0) return;
     _spawned = true;
 
-    for (var i = 0; i < 80; i++) {
+    final count = (size.x * size.y / 12).clamp(40, 160).toInt();
+    for (var i = 0; i < count; i++) {
       add(ConfettiParticle(
         random: _random,
         startX: _random.nextDouble() * size.x,
+        startY: -_random.nextDouble() * (size.y * 0.5),
         color: HSVColor.fromAHSV(1, _random.nextDouble() * 360, 0.75, 1)
             .toColor(),
       ));
     }
+  }
+
+  // Spawn once the real size is known (size can be zero inside onLoad).
+  @override
+  void onGameResize(Vector2 size) {
+    super.onGameResize(size);
+    _spawnConfetti();
   }
 }
 
@@ -41,13 +47,14 @@ class ConfettiParticle extends PositionComponent
   ConfettiParticle({
     required Random random,
     required double startX,
+    required double startY,
     required this.color,
   })  : _vx = (random.nextDouble() - 0.5) * 200,
         _vy = 100 + random.nextDouble() * 150,
         _rotSpeed = (random.nextDouble() - 0.5) * 5,
         _paint = Paint()..color = color,
         super(
-          position: Vector2(startX, -random.nextDouble() * 200),
+          position: Vector2(startX, startY),
           size: Vector2(8, 12),
           angle: random.nextDouble() * 2 * pi,
           anchor: Anchor.center,
@@ -60,7 +67,11 @@ class ConfettiParticle extends PositionComponent
     position.y += _vy * dt;
     angle += _rotSpeed * dt;
 
-    if (position.y > game.size.y + 50) removeFromParent();
+    if (position.y > game.size.y + 50 ||
+        position.x < -30 ||
+        position.x > game.size.x + 30) {
+      removeFromParent();
+    }
   }
 
   @override

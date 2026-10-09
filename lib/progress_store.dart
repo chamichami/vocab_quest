@@ -1,5 +1,10 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:math';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 import 'levels.dart';
+import 'user_service.dart';
 
 class Progress {
   final int highScore;
@@ -14,23 +19,45 @@ class Progress {
     required this.stars,
   });
 
+  factory Progress.empty() => Progress(
+        highScore: 0,
+        bestStreak: 0,
+        unlockedLevels: 1,
+        stars: List<int>.filled(levels.length, 0),
+      );
+
   int get totalStars => stars.fold(0, (a, b) => a + b);
 }
 
-/// Saves progress on the device with shared_preferences.
+/// Per-account progress, stored in Firestore at users/{uid}.
+/// Firestore caches on the device, so it also works briefly offline.
 class ProgressStore {
-  static const _kHigh = 'highScore';
-  static const _kStreak = 'bestStreak';
-  static const _kUnlocked = 'unlockedLevels';
-  static String _kStars(int i) => 'stars_$i';
+  static DocumentReference<Map<String, dynamic>>? _doc() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    return uid == null ? null : UserService.userDoc(uid);
+  }
+
+  static List<int> _stars(Map<String, dynamic>? d) {
+    final raw = (d?['stars'] as List?)?.map((e) => (e as num).toInt()).toList();
+    final out = List<int>.filled(levels.length, 0);
+    if (raw != null) {
+      for (var i = 0; i < min(raw.length, out.length); i++) {
+        out[i] = raw[i];
+      }
+    }
+    return out;
+  }
 
   static Future<Progress> load() async {
-    final p = await SharedPreferences.getInstance();
+    final ref = _doc();
+    if (ref == null) return Progress.empty();
+    final d = (await ref.get()).data();
+    if (d == null) return Progress.empty();
     return Progress(
-      highScore: p.getInt(_kHigh) ?? 0,
-      bestStreak: p.getInt(_kStreak) ?? 0,
-      unlockedLevels: p.getInt(_kUnlocked) ?? 1,
-      stars: List.generate(levels.length, (i) => p.getInt(_kStars(i)) ?? 0),
+      highScore: (d['highScore'] as num?)?.toInt() ?? 0,
+      bestStreak: (d['bestStreak'] as num?)?.toInt() ?? 0,
+      unlockedLevels: (d['unlockedLevels'] as num?)?.toInt() ?? 1,
+      stars: _stars(d),
     );
   }
 
@@ -40,19 +67,25 @@ class ProgressStore {
     required int score,
     required int bestStreak,
   }) async {
-    final p = await SharedPreferences.getInstance();
+    final ref = _doc();
+    if (ref == null) return;
 
-    if (stars > (p.getInt(_kStars(levelIndex)) ?? 0)) {
-      await p.setInt(_kStars(levelIndex), stars);
-    }
-    if (score > (p.getInt(_kHigh) ?? 0)) await p.setInt(_kHigh, score);
-    if (bestStreak > (p.getInt(_kStreak) ?? 0)) {
-      await p.setInt(_kStreak, bestStreak);
-    }
+    final d = (await ref.get()).data();
 
-    final unlockTarget = (levelIndex + 2).clamp(1, levels.length);
-    if (unlockTarget > (p.getInt(_kUnlocked) ?? 1)) {
-      await p.setInt(_kUnlocked, unlockTarget);
-    }
+    final starList = _stars(d);
+    starList[levelIndex] = max(starList[levelIndex], stars);
+
+    final highScore = max((d?['highScore'] as num?)?.toInt() ?? 0, score);
+    final best = max((d?['bestStreak'] as num?)?.toInt() ?? 0, bestStreak);
+    final unlocked = max((d?['unlockedLevels'] as num?)?.toInt() ?? 1,
+        min(levelIndex + 2, levels.length));
+
+    await ref.set({
+      'highScore': highScore,
+      'bestStreak': best,
+      'unlockedLevels': unlocked,
+      'stars': starList,
+      'totalStars': starList.fold<int>(0, (a, b) => a + b),
+    }, SetOptions(merge: true));
   }
 }
