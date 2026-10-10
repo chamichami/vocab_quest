@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "466872693562",
+    "project_id": "vocab-quest-d8cee",
+    "storage_bucket": "vocab-quest-d8cee.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:466872693562:android:76cca3d2169b07f7bcd603",
+        "android_client_info": {
+          "package_name": "com.example.vocab_quest"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "466872693562-7k2dqif7m5i31c8jd96ed5qngiavpgod.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.vocab_quest",
+            "certificate_hash": "40c8b505a8f6467037ab3886cfae3cf74fc63a14"
+          }
+        },
+        {
+          "client_id": "466872693562-h8q6qqr2a291ii26g57uronl578tgamd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBArLUgoNXSOds_iHkBFcTA8Zf6RfEHX7U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "466872693562-h8q6qqr2a291ii26g57uronl578tgamd.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "466872693562-ggal0qo9na3ojuu9212hk8q715dkg4a0.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.vocabQuest"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
