@@ -19,8 +19,6 @@ class PickedImage {
   const PickedImage(this.bytes, this.name);
 }
 
-/// Picks a photo from the gallery and uploads it to Cloudinary using an
-/// unsigned upload preset (no secret is stored in the app).
 class CloudinaryService {
   static bool get isConfigured => AppConfig.cloudinaryConfigured;
 
@@ -38,24 +36,26 @@ class CloudinaryService {
     return PickedImage(await file.readAsBytes(), file.name);
   }
 
-  /// Returns a square, face-centred 400x400 HTTPS URL for the uploaded photo.
   static Future<String> uploadAvatar(PickedImage image) async {
     if (!isConfigured) {
       throw const CloudinaryException(configurationMessage);
     }
 
     final uri = Uri.parse(
-        'https://api.cloudinary.com/v1_1/${AppConfig.cloudinaryCloudName}/image/upload');
+      'https://api.cloudinary.com/v1_1/${AppConfig.cloudinaryCloudName}/image/upload',
+    );
 
     final request = http.MultipartRequest('POST', uri)
       ..fields['upload_preset'] = AppConfig.cloudinaryUploadPreset
       ..fields['folder'] = 'vocab_quest/avatars'
-      ..files.add(http.MultipartFile.fromBytes('file', image.bytes,
-          filename: image.name));
+      ..files.add(
+        http.MultipartFile.fromBytes('file', image.bytes, filename: image.name),
+      );
 
     try {
       final response = await http.Response.fromStream(
-          await request.send().timeout(const Duration(seconds: 30)));
+        await request.send().timeout(const Duration(seconds: 30)),
+      );
       final body = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode != 200) {
@@ -65,7 +65,9 @@ class CloudinaryService {
 
       final url = body['secure_url'] as String;
       return url.replaceFirst(
-          '/upload/', '/upload/c_fill,g_auto,w_400,h_400,f_auto,q_auto/');
+        '/upload/',
+        '/upload/c_fill,g_auto,w_400,h_400,f_auto,q_auto/',
+      );
     } on CloudinaryException {
       rethrow;
     } catch (_) {

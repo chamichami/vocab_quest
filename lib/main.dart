@@ -13,7 +13,8 @@ Future<void> main() async {
 
   try {
     await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform);
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
   } catch (e) {
     runApp(SetupErrorApp(error: '$e'));
     return;
@@ -44,7 +45,6 @@ class _VocabQuestAppState extends State<VocabQuestApp>
     super.dispose();
   }
 
-  // Pause the music while the app is in the background.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     AppSettings.instance.setForeground(state == AppLifecycleState.resumed);
@@ -65,7 +65,6 @@ class _VocabQuestAppState extends State<VocabQuestApp>
   }
 }
 
-/// Shows Login when signed out and the Dashboard when signed in.
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
 
@@ -76,7 +75,8 @@ class AuthGate extends StatelessWidget {
       builder: (context, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
           return const Scaffold(
-              body: Center(child: CircularProgressIndicator()));
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
         return snap.data == null ? const LoginScreen() : const HomeScreen();
       },
@@ -84,7 +84,6 @@ class AuthGate extends StatelessWidget {
   }
 }
 
-/// Friendly screen if Firebase has not been configured yet.
 class SetupErrorApp extends StatelessWidget {
   final String error;
   const SetupErrorApp({super.key, required this.error});
@@ -102,9 +101,10 @@ class SetupErrorApp extends StatelessWidget {
               children: [
                 const Icon(Icons.build_circle_outlined, size: 64),
                 const SizedBox(height: 16),
-                const Text('Firebase is not set up yet',
-                    style:
-                        TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                const Text(
+                  'Firebase is not set up yet',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 12),
                 Text(error, textAlign: TextAlign.center),
               ],

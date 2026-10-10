@@ -22,8 +22,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _busy = false;
   bool _uploading = false;
   Uint8List? _preview;
-  String? _photoUrl; // Cloudinary URL once uploaded
-
+  String? _photoUrl;
   @override
   void dispose() {
     _username.dispose();
@@ -32,7 +31,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     super.dispose();
   }
 
-  /// Tap the avatar -> pick a photo -> upload to Cloudinary.
   Future<void> _pickPhoto() async {
     if (!CloudinaryService.isConfigured) {
       showMessage(context, CloudinaryService.configurationMessage);
@@ -77,8 +75,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     setState(() => _busy = true);
     try {
       await action();
-      // Account created / signed in: close this screen so the AuthGate's
-      // home screen is what the player sees.
       if (mounted) Navigator.of(context).popUntil((r) => r.isFirst);
     } on AuthException catch (e) {
       if (mounted) showMessage(context, e.message);
@@ -95,12 +91,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
       showMessage(context, error);
       return;
     }
-    _run(() => AuthService.signUp(
-          username: _username.text,
-          email: _email.text,
-          password: _password.text,
-          photoUrl: _photoUrl,
-        ));
+    _run(
+      () => AuthService.signUp(
+        username: _username.text,
+        email: _email.text,
+        password: _password.text,
+        photoUrl: _photoUrl,
+      ),
+    );
   }
 
   @override
@@ -114,8 +112,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
               constraints: const BoxConstraints(maxWidth: 380),
               child: Column(
                 children: [
-                  const Text('SIGN UP',
-                      style: TextStyle(fontSize: 24, letterSpacing: 3)),
+                  const Text(
+                    'SIGN UP',
+                    style: TextStyle(fontSize: 24, letterSpacing: 3),
+                  ),
                   const SizedBox(height: 20),
                   AvatarImage(
                     radius: 58,
@@ -125,30 +125,36 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     onTap: _busy ? null : _pickPhoto,
                   ),
                   const SizedBox(height: 6),
-                  const Text('Tap to add a profile picture',
-                      style: TextStyle(fontSize: 12)),
+                  const Text(
+                    'Tap to add a profile picture',
+                    style: TextStyle(fontSize: 12),
+                  ),
                   const SizedBox(height: 24),
                   AuthField(
-                      controller: _username,
-                      hint: 'Username',
-                      enabled: !_busy),
+                    controller: _username,
+                    hint: 'Username',
+                    enabled: !_busy,
+                  ),
                   AuthField(
-                      controller: _email,
-                      hint: 'Email',
-                      keyboardType: TextInputType.emailAddress,
-                      enabled: !_busy),
+                    controller: _email,
+                    hint: 'Email',
+                    keyboardType: TextInputType.emailAddress,
+                    enabled: !_busy,
+                  ),
                   AuthField(
-                      controller: _password,
-                      hint: 'Password',
-                      obscure: true,
-                      action: TextInputAction.done,
-                      onSubmitted: (_) => _busy ? null : _signUp(),
-                      enabled: !_busy),
+                    controller: _password,
+                    hint: 'Password',
+                    obscure: true,
+                    action: TextInputAction.done,
+                    onSubmitted: (_) => _busy ? null : _signUp(),
+                    enabled: !_busy,
+                  ),
                   const SizedBox(height: 14),
                   PillButton(
-                      label: 'SIGN UP',
-                      busy: _busy,
-                      onPressed: _busy ? null : _signUp),
+                    label: 'SIGN UP',
+                    busy: _busy,
+                    onPressed: _busy ? null : _signUp,
+                  ),
                   const SizedBox(height: 18),
                   PillButton(
                     label: 'SIGN UP WITH GOOGLE',
@@ -166,10 +172,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       const Text('Already have an account? '),
                       GestureDetector(
                         onTap: _busy ? null : () => Navigator.of(context).pop(),
-                        child: const Text('Log in',
-                            style: TextStyle(
-                                color: Colors.red,
-                                fontWeight: FontWeight.bold)),
+                        child: const Text(
+                          'Log in',
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ],
                   ),

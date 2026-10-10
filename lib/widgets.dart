@@ -1,13 +1,12 @@
-  import 'dart:typed_data';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
 import 'theme.dart';
 
-/// Round profile picture. Shows a placeholder when there is no photo.
 class AvatarImage extends StatelessWidget {
   final String? url;
-  final Uint8List? previewBytes; // shown instantly after picking a photo
+  final Uint8List? previewBytes;
   final double radius;
   final VoidCallback? onTap;
   final bool busy;
@@ -90,7 +89,6 @@ class AvatarImage extends StatelessWidget {
 Widget _avatarPlaceholder(double radius) =>
     Icon(Icons.pets, size: radius, color: AppColors.pink);
 
-/// App logo. Put your logo at lib/assets/images/logo.png to replace the placeholder.
 class LogoBox extends StatelessWidget {
   final double size;
   const LogoBox({super.key, this.size = 130});
@@ -130,7 +128,6 @@ class LogoBox extends StatelessWidget {
   }
 }
 
-/// White rounded text field like the wireframe.
 class AuthField extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
@@ -180,7 +177,6 @@ class AuthField extends StatelessWidget {
   }
 }
 
-/// Pill-shaped button. Pass [onPressed] = null to disable it.
 class PillButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;

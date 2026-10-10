@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 
 import 'user_service.dart';
 
-/// An error whose message is safe to show to the player.
 class AuthException implements Exception {
   final String message;
   const AuthException(this.message);
@@ -29,7 +28,9 @@ class AuthService {
     final UserCredential cred;
     try {
       cred = await _auth.createUserWithEmailAndPassword(
-          email: email.trim(), password: password);
+        email: email.trim(),
+        password: password,
+      );
     } on FirebaseAuthException catch (e) {
       throw AuthException(_message(e));
     }
@@ -39,7 +40,10 @@ class AuthService {
       await user.updateDisplayName(username.trim());
       if (photoUrl != null) await user.updatePhotoURL(photoUrl);
       await UserService.createProfile(
-          user: user, username: username, photoUrl: photoUrl);
+        user: user,
+        username: username,
+        photoUrl: photoUrl,
+      );
     } on UsernameTakenException {
       await user.delete();
       throw const AuthException('That username was just taken. Try another.');
@@ -49,12 +53,13 @@ class AuthService {
     }
   }
 
-  /// [identifier] can be a username or an email address.
   static Future<void> signIn(String identifier, String password) async {
     var email = identifier.trim();
     if (!email.contains('@')) {
-      final snap = await UserService.nameDoc(UserService.normalize(email)).get();
-      if (!snap.exists) throw const AuthException('No account with that username.');
+      final snap = await UserService.nameDoc(UserService.normalize(email))
+          .get();
+      if (!snap.exists)
+        throw const AuthException('No account with that username.');
       email = snap.data()!['email'] as String;
     }
     try {
@@ -64,7 +69,6 @@ class AuthService {
     }
   }
 
-  /// Returns normally (without signing in) if the player cancels.
   static Future<void> signInWithGoogle() async {
     try {
       final UserCredential cred;

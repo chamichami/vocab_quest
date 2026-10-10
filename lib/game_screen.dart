@@ -10,7 +10,6 @@ import 'app_bar.dart';
 import 'theme.dart';
 import 'progress_store.dart';
 
-/// Main transaction page: the word-unscramble game.
 class GameScreen extends StatefulWidget {
   final int startLevel;
   const GameScreen({super.key, this.startLevel = 0});
@@ -36,14 +35,11 @@ class _GameScreenState extends State<GameScreen> {
   late int _levelIndex;
   int _wordIndex = 0;
 
-  // Current word state
-  late List<String> _tiles; // scrambled letters
-  late List<bool> _tileUsed; // which tiles are already placed
-  late List<String?> _boxes; // letter in each box
-  late List<int?> _boxTile; // which tile filled each box
-  late List<bool> _boxHinted; // hinted boxes are locked
-
-  // Scoring
+  late List<String> _tiles;
+  late List<bool> _tileUsed;
+  late List<String?> _boxes;
+  late List<int?> _boxTile;
+  late List<bool> _boxHinted;
   int _score = 0;
   int _streak = 0;
   int _bestStreak = 0;
@@ -67,8 +63,6 @@ class _GameScreenState extends State<GameScreen> {
     super.dispose();
   }
 
-  // ---------- Setup ----------
-
   void _loadLevel() {
     _wordIndex = 0;
     _hintsUsedInLevel = 0;
@@ -88,12 +82,10 @@ class _GameScreenState extends State<GameScreen> {
     final letters = word.split('');
     for (var attempt = 0; attempt < 20; attempt++) {
       letters.shuffle(_random);
-      if (letters.join() != word) break; // avoid showing the answer
+      if (letters.join() != word) break;
     }
     return letters.join();
   }
-
-  // ---------- Box / tile helpers ----------
 
   void _freeBox(int i) {
     final t = _boxTile[i];
@@ -105,8 +97,7 @@ class _GameScreenState extends State<GameScreen> {
   void _onTileTap(int tileIndex) {
     if (_tileUsed[tileIndex]) return;
     final empty = _boxes.indexWhere((b) => b == null);
-    if (empty == -1) return; // all boxes full
-
+    if (empty == -1) return;
     setState(() {
       _boxes[empty] = _tiles[tileIndex];
       _boxTile[empty] = tileIndex;
@@ -131,8 +122,6 @@ class _GameScreenState extends State<GameScreen> {
     });
   }
 
-  // ---------- Submit ----------
-
   void _onSubmit() {
     if (_boxes.any((b) => b == null)) {
       _showSnackBar('Fill all boxes before submitting.');
@@ -155,7 +144,7 @@ class _GameScreenState extends State<GameScreen> {
       });
 
       if (finished) {
-        _completeLevel(); // keep _wordIndex valid while the dialog is shown
+        _completeLevel();
       } else {
         _showSnackBar('Correct! +$gained');
       }
@@ -170,12 +159,9 @@ class _GameScreenState extends State<GameScreen> {
     }
   }
 
-  // ---------- Hint ----------
-
   void _useHint() {
     final answer = _answer;
 
-    // First box that is empty or wrong.
     final target = List.generate(
       answer.length,
       (i) => i,
@@ -193,13 +179,10 @@ class _GameScreenState extends State<GameScreen> {
     final letter = answer[target];
 
     setState(() {
-      // Clear a wrong letter from the target box.
       if (_boxes[target] != null) _freeBox(target);
 
-      // Find an unused tile with the needed letter.
       var tile = _findFreeTile(letter);
       if (tile == -1) {
-        // The needed tile is sitting in another (wrong) box: take it back.
         for (var i = 0; i < _boxes.length; i++) {
           if (i != target && !_boxHinted[i] && _boxes[i] == letter) {
             _freeBox(i);
@@ -225,8 +208,6 @@ class _GameScreenState extends State<GameScreen> {
     }
     return -1;
   }
-
-  // ---------- Level complete ----------
 
   int get _stars {
     if (_hintsUsedInLevel == 0) return 3;
@@ -309,7 +290,7 @@ class _GameScreenState extends State<GameScreen> {
                         children: [
                           TextButton(
                             onPressed: () {
-                              Navigator.of(ctx).pop(); // close dialog
+                              Navigator.of(ctx).pop();
                               _startNextLevel(isLast: isLast);
                               _openDashboard();
                             },
@@ -363,15 +344,9 @@ class _GameScreenState extends State<GameScreen> {
 
   void _openDashboard() {
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => HomeScreen(
-          resumeLevel: _levelIndex,
-        ),
-      ),
+      MaterialPageRoute(builder: (_) => HomeScreen(resumeLevel: _levelIndex)),
     );
   }
-
-  // ---------- UI ----------
 
   @override
   Widget build(BuildContext context) {
@@ -438,7 +413,6 @@ class _GameScreenState extends State<GameScreen> {
             child: Image.asset(
               _level.image,
               fit: BoxFit.cover,
-              // Placeholder until the real image files are added.
               errorBuilder: (_, _, _) => Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,

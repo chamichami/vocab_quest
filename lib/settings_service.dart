@@ -2,7 +2,6 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Volume + music settings. Saved on the device and used by every screen.
 class AppSettings extends ChangeNotifier {
   AppSettings._();
   static final AppSettings instance = AppSettings._();
@@ -29,7 +28,7 @@ class AppSettings extends ChangeNotifier {
     try {
       await _player.setReleaseMode(ReleaseMode.loop);
     } catch (_) {}
-    _sync(); // not awaited so the app is not held up by audio
+    _sync();
   }
 
   Future<void> setVolume(double v, {bool save = true}) async {
@@ -50,7 +49,6 @@ class AppSettings extends ChangeNotifier {
     await p.setBool(_kMusic, on);
   }
 
-  /// Pauses the music while the app is in the background.
   void setForeground(bool foreground) {
     _foreground = foreground;
     _sync();

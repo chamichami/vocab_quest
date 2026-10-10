@@ -25,7 +25,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _uploading = false;
   Uint8List? _preview;
 
-  /// Tap the avatar -> pick -> upload to Cloudinary -> save URL to the profile.
   Future<void> _changePhoto() async {
     final user = _user;
     if (user == null) return;
@@ -63,7 +62,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _logOut() async {
     final navigator = Navigator.of(context);
     navigator.popUntil((r) => r.isFirst);
-    await AuthService.signOut(); // AuthGate then shows the login screen
+    await AuthService.signOut();
   }
 
   @override
@@ -72,15 +71,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.topBar,
         centerTitle: true,
-        title: const Text('Profile',
-            style: TextStyle(letterSpacing: 3, fontWeight: FontWeight.w600)),
+        title: const Text(
+          'Profile',
+          style: TextStyle(letterSpacing: 3, fontWeight: FontWeight.w600),
+        ),
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
             style: IconButton.styleFrom(
               backgroundColor: AppColors.barButton,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             tooltip: 'Close',
             icon: const Icon(Icons.close),
@@ -101,7 +103,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Card(
                   color: Colors.white,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28)),
+                    borderRadius: BorderRadius.circular(28),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(20),
                     child: Column(
@@ -115,37 +118,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           onTap: _changePhoto,
                         ),
                         const SizedBox(height: 6),
-                        const Text('Tap the picture to change it',
-                            style: TextStyle(fontSize: 12)),
+                        const Text(
+                          'Tap the picture to change it',
+                          style: TextStyle(fontSize: 12),
+                        ),
                         const SizedBox(height: 12),
                         Text(
                           p?.username ?? _user?.displayName ?? 'Player',
                           style: const TextStyle(
-                              fontSize: 26, letterSpacing: 2),
+                            fontSize: 26,
+                            letterSpacing: 2,
+                          ),
                         ),
                         const SizedBox(height: 16),
                         _StatTile(
-                            icon: Icons.star,
-                            iconColor: Colors.amber,
-                            label: 'LEVEL ${p?.level ?? 1}'),
+                          icon: Icons.star,
+                          iconColor: Colors.amber,
+                          label: 'LEVEL ${p?.level ?? 1}',
+                        ),
                         const SizedBox(height: 10),
                         _StatTile(
-                            icon: Icons.local_fire_department,
-                            iconColor: Colors.deepOrange,
-                            label: 'BEST STREAK ${p?.bestStreak ?? 0}'),
+                          icon: Icons.local_fire_department,
+                          iconColor: Colors.deepOrange,
+                          label: 'BEST STREAK ${p?.bestStreak ?? 0}',
+                        ),
                         const SizedBox(height: 10),
                         if (p != null)
                           _RankTile(
-                              key: ValueKey(p.highScore),
-                              highScore: p.highScore)
+                            key: ValueKey(p.highScore),
+                            highScore: p.highScore,
+                          )
                         else
                           const _StatTile(
-                              icon: Icons.emoji_events,
-                              iconColor: Colors.orange,
-                              label: 'RANK ...'),
+                            icon: Icons.emoji_events,
+                            iconColor: Colors.orange,
+                            label: 'RANK ...',
+                          ),
                         const SizedBox(height: 16),
-                        Text(_user?.email ?? '',
-                            style: const TextStyle(letterSpacing: 1)),
+                        Text(
+                          _user?.email ?? '',
+                          style: const TextStyle(letterSpacing: 1),
+                        ),
                         const SizedBox(height: 16),
                         PillButton(
                           label: 'LOG OUT',
@@ -165,7 +178,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-/// Fetches this player's rank among all players, once per high score.
 class _RankTile extends StatefulWidget {
   final int highScore;
   const _RankTile({super.key, required this.highScore});
@@ -185,10 +197,13 @@ class _RankTileState extends State<_RankTile> {
         final label = snap.hasData
             ? 'RANK #${snap.data!.rank} OF ${snap.data!.total}'
             : snap.hasError
-                ? 'RANK UNAVAILABLE'
-                : 'RANK ...';
+            ? 'RANK UNAVAILABLE'
+            : 'RANK ...';
         return _StatTile(
-            icon: Icons.emoji_events, iconColor: Colors.orange, label: label);
+          icon: Icons.emoji_events,
+          iconColor: Colors.orange,
+          label: label,
+        );
       },
     );
   }
@@ -199,8 +214,11 @@ class _StatTile extends StatelessWidget {
   final Color iconColor;
   final String label;
 
-  const _StatTile(
-      {required this.icon, required this.iconColor, required this.label});
+  const _StatTile({
+    required this.icon,
+    required this.iconColor,
+    required this.label,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -219,8 +237,10 @@ class _StatTile extends StatelessWidget {
               height: 54,
               color: AppColors.barButton,
               alignment: Alignment.center,
-              child: Text(label,
-                  style: const TextStyle(fontSize: 18, letterSpacing: 2)),
+              child: Text(
+                label,
+                style: const TextStyle(fontSize: 18, letterSpacing: 2),
+              ),
             ),
           ),
         ],

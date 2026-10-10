@@ -1,14 +1,13 @@
 import 'dart:math';
+
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 
-/// Confetti celebration shown behind the Level Complete dialog.
 class ConfettiGame extends FlameGame {
   final Random _random = Random();
   bool _spawned = false;
 
-  // Transparent so the dialog's barrier shows through.
   @override
   Color backgroundColor() => const Color(0x00000000);
 
@@ -18,17 +17,22 @@ class ConfettiGame extends FlameGame {
 
     final count = (size.x * size.y / 12).clamp(40, 160).toInt();
     for (var i = 0; i < count; i++) {
-      add(ConfettiParticle(
-        random: _random,
-        startX: _random.nextDouble() * size.x,
-        startY: -_random.nextDouble() * (size.y * 0.5),
-        color: HSVColor.fromAHSV(1, _random.nextDouble() * 360, 0.75, 1)
-            .toColor(),
-      ));
+      add(
+        ConfettiParticle(
+          random: _random,
+          startX: _random.nextDouble() * size.x,
+          startY: -_random.nextDouble() * (size.y * 0.5),
+          color: HSVColor.fromAHSV(
+            1,
+            _random.nextDouble() * 360,
+            0.75,
+            1,
+          ).toColor(),
+        ),
+      );
     }
   }
 
-  // Spawn once the real size is known (size can be zero inside onLoad).
   @override
   void onGameResize(Vector2 size) {
     super.onGameResize(size);
@@ -49,16 +53,16 @@ class ConfettiParticle extends PositionComponent
     required double startX,
     required double startY,
     required this.color,
-  })  : _vx = (random.nextDouble() - 0.5) * 200,
-        _vy = 100 + random.nextDouble() * 150,
-        _rotSpeed = (random.nextDouble() - 0.5) * 5,
-        _paint = Paint()..color = color,
-        super(
-          position: Vector2(startX, startY),
-          size: Vector2(8, 12),
-          angle: random.nextDouble() * 2 * pi,
-          anchor: Anchor.center,
-        );
+  }) : _vx = (random.nextDouble() - 0.5) * 200,
+       _vy = 100 + random.nextDouble() * 150,
+       _rotSpeed = (random.nextDouble() - 0.5) * 5,
+       _paint = Paint()..color = color,
+       super(
+         position: Vector2(startX, startY),
+         size: Vector2(8, 12),
+         angle: random.nextDouble() * 2 * pi,
+         anchor: Anchor.center,
+       );
 
   @override
   void update(double dt) {

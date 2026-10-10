@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Palette sampled from the v2 wireframe.
 class AppColors {
   static const sand = Color(0xFFE3CFAA);
   static const background = Color(0xFFD8D5C2);

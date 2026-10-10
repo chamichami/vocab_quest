@@ -8,7 +8,6 @@ import 'progress_store.dart';
 import 'user_service.dart';
 import 'widgets.dart';
 
-/// Dashboard: progress overview + level select.
 class HomeScreen extends StatefulWidget {
   final int? resumeLevel;
 

@@ -4,7 +4,6 @@ import 'profile_screen.dart';
 import 'settings_screen.dart';
 import 'theme.dart';
 
-/// Top bar from the wireframe: Settings (left), title, Profile (right).
 PreferredSizeWidget vqAppBar(
   BuildContext context, {
   String title = 'VOCAB QUEST',

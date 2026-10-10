@@ -9,9 +9,8 @@ import 'user_service.dart';
 class Progress {
   final int highScore;
   final int bestStreak;
-  final int unlockedLevels; // how many levels are playable (min 1)
-  final List<int> stars; // best stars per level (0-3)
-
+  final int unlockedLevels;
+  final List<int> stars;
   const Progress({
     required this.highScore,
     required this.bestStreak,
@@ -20,17 +19,15 @@ class Progress {
   });
 
   factory Progress.empty() => Progress(
-        highScore: 0,
-        bestStreak: 0,
-        unlockedLevels: 1,
-        stars: List<int>.filled(levels.length, 0),
-      );
+    highScore: 0,
+    bestStreak: 0,
+    unlockedLevels: 1,
+    stars: List<int>.filled(levels.length, 0),
+  );
 
   int get totalStars => stars.fold(0, (a, b) => a + b);
 }
 
-/// Per-account progress, stored in Firestore at users/{uid}.
-/// Firestore caches on the device, so it also works briefly offline.
 class ProgressStore {
   static DocumentReference<Map<String, dynamic>>? _doc() {
     final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -77,8 +74,10 @@ class ProgressStore {
 
     final highScore = max((d?['highScore'] as num?)?.toInt() ?? 0, score);
     final best = max((d?['bestStreak'] as num?)?.toInt() ?? 0, bestStreak);
-    final unlocked = max((d?['unlockedLevels'] as num?)?.toInt() ?? 1,
-        min(levelIndex + 2, levels.length));
+    final unlocked = max(
+      (d?['unlockedLevels'] as num?)?.toInt() ?? 1,
+      min(levelIndex + 2, levels.length),
+    );
 
     await ref.set({
       'highScore': highScore,

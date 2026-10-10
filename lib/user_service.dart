@@ -5,14 +5,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 class UsernameTakenException implements Exception {}
 
-/// A player's public profile, stored in Firestore at users/{uid}.
 class PlayerProfile {
   final String uid;
   final String username;
   final String photoUrl;
   final int highScore;
   final int bestStreak;
-  final int level; // highest level unlocked
+  final int level;
   final int totalStars;
 
   const PlayerProfile({
@@ -50,8 +49,6 @@ class UserService {
   static DocumentReference<Map<String, dynamic>> userDoc(String uid) =>
       _db.collection('users').doc(uid);
 
-  /// usernames/{lowercase name} -> { uid, email }. Used for unique usernames
-  /// and for "log in with username".
   static DocumentReference<Map<String, dynamic>> nameDoc(String lowerName) =>
       _db.collection('usernames').doc(lowerName);
 
@@ -62,7 +59,6 @@ class UserService {
     return !snap.exists;
   }
 
-  /// Creates users/{uid} and claims the username in one transaction.
   static Future<void> createProfile({
     required User user,
     required String username,
@@ -87,7 +83,6 @@ class UserService {
     });
   }
 
-  /// For Google sign-in: creates a profile the first time only.
   static Future<void> ensureProfile(User user) async {
     final existing = await userDoc(user.uid).get();
     if (existing.exists) return;
@@ -121,11 +116,12 @@ class UserService {
     await FirebaseAuth.instance.currentUser?.updatePhotoURL(url);
   }
 
-  /// Rank by high score among all players (1 = best).
   static Future<PlayerRank> rank(int highScore) async {
     final users = _db.collection('users');
-    final better =
-        await users.where('highScore', isGreaterThan: highScore).count().get();
+    final better = await users
+        .where('highScore', isGreaterThan: highScore)
+        .count()
+        .get();
     final all = await users.count().get();
     return PlayerRank((better.count ?? 0) + 1, all.count ?? 1);
   }
